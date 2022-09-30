@@ -68,7 +68,9 @@ WS
    : . -> skip
    ;*/
 var syntaxtree:any[]=[];
-var src:string =">[>[]]"; //h i think
+var src:string =">>>++[[+]]"
+
+//console.log(src.length)
 var GT:foo.parser = foo.Pstring('>');
 var LT:foo.parser = foo.Pstring('<');
 var PLUS:foo.parser = foo.Pstring('+');
@@ -78,10 +80,23 @@ var COMMA:foo.parser = foo.Pstring(',');
 var LPAREN:foo.parser = foo.Pstring('[');
 var RPAREN:foo.parser = foo.Pstring(']');
 var op_code:foo.parser = foo.muor([GT,LT,PLUS,MINUS,DOT,COMMA]);
-var statement:foo.parser = foo.or(op_code,LPAREN);
-var mulps:foo.parser = foo.MZMT(statement);
-var andcont:foo.parser = foo.and(mulps,RPAREN);
-var cont:foo.parser = foo.or(op_code,andcont);
+var statement:foo.parser = foo.PconstructK([[LPAREN,"statement",RPAREN],[op_code]]);
+var ini:foo.inputstr=foo.init(src);
+while(ini.curpo < src.length){
+   var res:foo.suc_fail=statement(ini);
+   //console.log(res)
+   if(res.status == "failure"){
+       console.log("error",res,ini.curpo);
+       ini.curpo = ini.curpo + 1;
+       continue;
+   }
+   else{
+    syntaxtree.push(res.scanned)
+    //console.log("suc",res);
+   }
+}
+console.log(JSON.stringify(syntaxtree.flat(1)))
+
 /*
 (statement rewrite)
 statement
@@ -95,24 +110,7 @@ cont = : opcode
 
 
 
-function parser(){
-    var ini:foo.inputstr=foo.init(src);
-    while(ini.curpo < src.length){
-        var res:foo.suc_fail=cont(ini);
-        //console.log(res)
-        if(res.status == "failure"){
-            console.log("error",res.scanned,ini.curpo);
-            ini.curpo = ini.curpo + 1;
-            continue;
-        }
-        else{
-         syntaxtree.push(res.scanned)
-        // console.log("suc",res);
-        }
-    }
-    console.log(syntaxtree);
-}
-parser();
+
 
 /*
 //var su:foo.parser = foo.MZMT(statement);

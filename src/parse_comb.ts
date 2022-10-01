@@ -42,6 +42,25 @@ export function anyADV(){
             return obj;
         }    
 }
+export function rematch(v:RegExp){
+    return function(match: inputstr){  
+            var strr = match.src.slice(match.curpo);   
+            var m = strr.match(v);  
+            if(m!==null){   
+            update(match, m[0].length);
+            const obj: suc_fail = {
+                status : "sucess",
+                scanned : m[0]
+            };
+            return obj;}
+            else{
+                const obj: suc_fail = {
+                    status : "failure",
+                    scanned : []
+                };
+            }
+        }    
+}
 
 export function Pstring(chr: string){
     return function(match: inputstr){        

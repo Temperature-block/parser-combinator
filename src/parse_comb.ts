@@ -1,7 +1,7 @@
 // commomn type for parsers and different types for combinators
-
+//@ts-nocheck
 //import { match } from "assert";
-
+var track = -1;
 
 export type inputstr = {
     src:string;
@@ -13,6 +13,7 @@ export type suc_fail = {
     status : "sucess"|"failure";
     scanned:string|string[]|[];
     fatal_err?:string;
+    acc?:any;
 };
 var anyarr:any[] = [];
 
@@ -27,8 +28,7 @@ export function init(a:string){
     var b:inputstr={
         src : a,
         curpo:0,
-        maxlen:a.length
-
+        maxlen:a.length,
     }
     return b;
 }
@@ -50,7 +50,11 @@ export function rematch(v:RegExp){
             update(match, m[0].length);
             const obj: suc_fail = {
                 status : "sucess",
-                scanned : m[0]
+                scanned : m[0],
+                acc : {
+                    name:b,
+                    val:chr
+                }
             };
             return obj;}
             else{
@@ -62,7 +66,7 @@ export function rematch(v:RegExp){
         }    
 }
 
-export function Pstring(chr: string){
+export function Pstring(chr: string,b:any){
     return function(match: inputstr){        
         var position = match.curpo;
         //console.log(position);
@@ -73,7 +77,11 @@ export function Pstring(chr: string){
             update(match,position+chr.length);
             const obj: suc_fail = {
                 status : "sucess",
-                scanned : chr
+                scanned : chr,
+                acc : {
+                    name:b,
+                    val:chr
+                }
             };
             return obj;
         }
@@ -87,17 +95,18 @@ export function Pstring(chr: string){
     }
 }
 
-export function and(parser0:parser,parser1:parser){
+export function and(parser0:parser,parser1:parser,b:any){
         return function(match: inputstr){
-            //console.log(parser0,parser1);       
-            //console.log(res1);     
             var res0:suc_fail = parser0(match);
             var res1:suc_fail = parser1(match);
-            //console.log(res0,res1);
             if(res0.status == "sucess" && res1.status == "sucess"){
                 const obj: suc_fail = {
                     status : "sucess",
-                    scanned : [res0.scanned,res1.scanned]
+                    scanned : [res0.scanned,res1.scanned],
+                    acc : {
+                        name:b,
+                        val:[res0.acc,res1.acc]
+                    }
                 };
                 return obj;
             }
@@ -111,26 +120,30 @@ export function and(parser0:parser,parser1:parser){
         }
     }
 
-export function or(parser0:parser,parser1:parser){
+export function or(parser0:parser,parser1:parser,b?:any){
             return function(match: inputstr){
-                //console.log("call")
                 var res0:suc_fail = parser0(match);
-               //console.log(res0,res1)
                 if(res0.status == "sucess"){
                     const obj: suc_fail = {
                         status : "sucess",
-                        scanned : res0.scanned
+                        scanned : res0.scanned,
+                        acc : {
+                            name:b,
+                            val:res0.acc
+                        }
                     };
-                    //console.log(obj);
                     return obj;    
                 }
                 var res1:suc_fail = parser1(match);
                 if(res1.status == "sucess"){
                     const obj: suc_fail = {
                         status : "sucess",
-                        scanned : res1.scanned
+                        scanned : res1.scanned,
+                        acc : {
+                            name:b,
+                            val:res1.acc
+                        }
                     };
-                    //console.log(obj);
                     return obj;
                 }
                 else{
@@ -138,76 +151,88 @@ export function or(parser0:parser,parser1:parser){
                         status : "failure",
                         scanned : [res0.scanned,res1.scanned]
                     };
-                    //console.log(obj);
                     return obj;
                 }
             }
          }
 
-export function MZMT(parser0:parser){
+export function MZMT(parser0:parser,b?:any){
         return function(match: inputstr){
             var arr:string[] = [];
+            var acarr = [];
             var cnt: number = -1;
             while(match.curpo<match.maxlen){
-                //console.log("typeof res0");
                 cnt = cnt + 1 ;
                 var res0:suc_fail = parser0(match);
-                //console.log(cnt)
                 if(res0.status == "sucess"){ 
-                    //console.log(res0);
                     arr.push(res0.scanned);
+                    acarr.push(res0.acc)
                     continue;
                 }
                 else{
-                    //console.log(match.curpo)
                     if (cnt >= 0){
-                    //.log("jjj")
                     const obj: suc_fail = {
                         status : "sucess",
-                        scanned : arr
+                        scanned : arr,
+                        acc : {
+                            name:b,
+                            val:acarr
+                        }
                     };
                     return obj;}
                     else{
-                        //console.log("jj")
                         const obj: suc_fail = {
                             status : "sucess",
-                            scanned : []
+                            scanned : [],
+                            acc : {
+                                name:b,
+                                val:[]
+                            }
                         };
                         return obj;
 
                     }
                 }
             }
-            //console.log(arr)
             const obj: suc_fail = {
                 status : "sucess",
-                scanned : arr
+                scanned : arr,
+                acc : {
+                    name:b,
+                    val:acarr
+                }
             };
             return obj;
         }
     }
 
-export function M1MT(parser0:parser){
+export function M1MT(parser0:parser,b?:any){
         return function(match: inputstr){
             var stat = -1
             var arr:string[] = [];
+            var acarr = [];
             var cnt: number = -1;
             while(match.curpo<match.maxlen){
                 cnt = cnt + 1 ;
                 var res0:suc_fail = parser0(match);
                 if(res0.status == "sucess"){ 
                     arr.push(res0.scanned);
+                    acarr.push(res0.acc)
                 }
                 else{
                     if (cnt > 0){
                     const obj: suc_fail = {
                         status : "sucess",
-                        scanned : arr
+                        scanned : arr,
+                        acc : {
+                            name:b,
+                            val:acarr
+                        }
                     };
                     return obj;}
                     else{
                         const obj: suc_fail = {
-                            status : "sucess",
+                            status : "failure",
                             scanned : arr
                         };
                         return obj;
@@ -217,7 +242,11 @@ export function M1MT(parser0:parser){
             if(cnt >=0){
             const obj: suc_fail = {
                 status : "sucess",
-                scanned : arr
+                scanned : arr,
+                acc : {
+                    name:b,
+                    val:acarr
+                }
             };
             return obj;}
             else{
@@ -231,14 +260,18 @@ export function M1MT(parser0:parser){
         }
 }
 
-export function muor(parser0:parser[]){
+export function muor(parser0:parser[],b?:any){
         return function(match: inputstr){
             for(var i =0;i<parser0.length;i++){
                 var res0:suc_fail = parser0[i](match);
                 if(res0.status == "sucess"){
                     const obj: suc_fail = {
                         status : "sucess",
-                        scanned : res0.scanned
+                        scanned : res0.scanned,
+                        acc : {
+                            name:b,
+                            val:res0.acc
+                        }
                     };
                     return obj;    
                 }
@@ -250,43 +283,43 @@ export function muor(parser0:parser[]){
                 status : "failure",
                 scanned : res0.scanned
             };
-            //console.log(obj)
             return obj;    
 
         }
 }
 
-export function mand(parser0:parser[]){
+export function mand(parser0:parser[],b?:any){
         return function(match: inputstr){
             var arr:string[] = [];
-            //console.log(parser0)
+            var acarr = [];
             for(var i =0;i<parser0.length;i++){
                 var res0:suc_fail = parser0[i](match);
                 if(res0.status == "sucess"){
-                   // console.log(res0)
                     arr.push(res0.scanned);
+                    acarr.push(res0.acc)
                 }
                 else{
-                    //console.log(res0)
                     const obj: suc_fail = {
                         status : "failure",
                         scanned : res0.scanned
                     };
-                    //console.log(match)
                     return obj;
                 }
             }
             const obj: suc_fail = {
                 status : "sucess",
-                scanned : arr
+                scanned : arr,
+                acc : {
+                    name:b,
+                    val:acarr
+                }
             };
             return obj;  
     }
 }
 
-//aka monster function
-export function PconstructK(parser0){
-    //console.log(parser0)
+//aka monster function's
+export function Pconstruct(parser0,b?:any){
     var recur_f = function(match: inputstr){
         if(match.curpo == match.maxlen){
             const obj: suc_fail = {
@@ -296,287 +329,366 @@ export function PconstructK(parser0){
             };
             return obj;
         }
-        let bb = [];
+        var parse_struct =  [];
+        var parse_defined = [];
         for(var i = 0;i<parser0.length;i++){
             if(match.curpo == match.maxlen){
                 break;
             }
-            var s_0 = [];
+            var partial_struct = [];
+            var partial_defined = [];
             for(var j = 0;j<parser0[i].length;j++){
-                //console.log(parser0[i])
                 var typspf = typeof(parser0[i][j]);
                 if(typspf == "function"){
                     if(match.curpo == match.maxlen){
                         const obj: suc_fail = {
                             status : "failure",
-                            scanned : [],
+                            scanned : partial_struct,
                             fatal_err : "EOF"
                         };
                         return obj;
                     }
                     var temp = parser0[i][j](match);
-                    //console.log(temp)
                     if(temp.status == "failure"){
                         if(j>0){
                             const obj: suc_fail = {
                                 status : "failure",
-                                scanned : []
+                                scanned : partial_struct
                             };
                             return obj;
                         }
                         if(i == parser0.length-1){
                             const obj: suc_fail = {
                                 status : "failure",
-                                scanned : []
+                                scanned : partial_struct
                             };
                             return obj;
-                            //break;
                         }
                         else{
-                            //s_0.push([]);
                             break;    
                         }
-                    }
+                    }//
                     else{
-                        s_0.push(temp.scanned);
-                       //console.log(s_0)
-                    
+                        partial_struct.push(temp.scanned);
+                        partial_defined.push(temp.acc);
                     }
-
-                }
+                }//endiffunction
                 else if(typspf == "string"){
-                   // console.log("recur")
                     if(match.curpo == match.maxlen){
                         const obj: suc_fail = {
                             status : "failure",
-                            scanned : [],
+                            scanned : partial_struct,
                             fatal_err : "EOF"
                         };
                         return obj;
                     }
                     var recur;
+                    recur = recur_f(match);
+                    if(recur.status == "failure"){
+                        if(recur.fatal_err=="EOF"){
+                                const obj: suc_fail = {
+                                    status : "failure",
+                                    scanned : partial_struct,
+                                    fatal_err : "EOF"
+                                };
+                                return obj;
+                        }
+                        else{
+                            if(i == parser0.length){
+                            const obj: suc_fail = {
+                                status : "failure",
+                                scanned : partial_struct
+                            };
+                            return obj;
+                        }
+                        else{
+                            break;
+                        }
+                    }
+                    }
+                    else{
+                        partial_struct.push(recur.scanned);
+                        partial_defined.push(recur.acc);
+                        }
+                }
+            }
+            if(partial_struct.length == 0){
+                continue;
+            }
+            else{
+                break;
+            }
+        }
+        return {
+            status : "sucess",
+            scanned : partial_struct,
+            acc:{
+                name:b,
+                val:partial_defined}
+        }
+    }
+    return recur_f;
+} 
+
+export function PconstructP(parser0,b?:any){
+    var recur_f = function(match: inputstr){
+        if(match.curpo == match.maxlen){
+            const obj: suc_fail = {
+                status : "failure",
+                scanned : [],
+                fatal_err : "EOF"
+            };
+            return obj;
+        }
+        //var parse_struct =  [];
+       // var parse_defined = [];
+        for(var i = 0;i<parser0.length;i++){
+            if(match.curpo == match.maxlen){
+                break;
+            }
+            var partial_struct = [];
+            var partial_defined = [];
+            for(var j = 0;j<parser0[i].length;j++){
+                var typspf = typeof(parser0[i][j]);
+                if(typspf == "function"){
+                    if(match.curpo == match.maxlen){
+                        const obj: suc_fail = {
+                            status : "failure",
+                            scanned : partial_struct,
+                            fatal_err : "EOF"
+                        };
+                        return obj;
+                    }
+                    var temp = parser0[i][j](match);
+                    if(temp.status == "failure"){
+                        if(j>0){
+                            const obj: suc_fail = {
+                                status : "failure",
+                                scanned : partial_struct
+                            };
+                            return obj;
+                        }
+                        if(i == parser0.length-1){
+                            //console.log("NO")
+                            const obj: suc_fail = {
+                                status : "failure",
+                                scanned : partial_struct
+                            };
+                            return obj;
+                        }
+                        else{
+                            break;    
+                        }
+                    }//
+                    else{
+                        //console.log(temp.scanned)
+                        partial_struct.push(temp.scanned);
+                        partial_defined.push(temp.acc);
+                    }
+                }//endiffunction
+                else if(typspf == "string"){
+                    //console.log(partial_struct)
+                    if(match.curpo == match.maxlen){
+                        const obj: suc_fail = {
+                            status : "failure",
+                            scanned : partial_struct,
+                            fatal_err : "EOF"
+                        };
+                        return obj;
+                    }
+                    var recur;
+                    var parse_struct =  [];
+                    var parse_defined = [];
                     while(1){
                         recur = recur_f(match);
                         if(recur.status == "failure"){
                             break;
                         }
                         else{
-                            s_0.push(recur.scanned);
+                            //console.log(partial_struct)
+                            parse_struct.push(recur.scanned);
+                            parse_defined.push(recur.acc);
                         }
                     }
+                    //partial_struct.push(parse_struct)
+                    //console.log(partial_struct)                   //recur = recur_f(match);
                     if(recur.status == "failure"){
-
-                        if(recur.fatal_err=="EOF"){recur
-                            if(j == parser0[i].length-1){
-                                //s_0.push([]);
-                                
-                                break;
-                            }
-                            else{
+                        if(recur.fatal_err=="EOF"){
                                 const obj: suc_fail = {
                                     status : "failure",
-                                    scanned : s_0,
+                                    scanned : partial_struct,
                                     fatal_err : "EOF"
                                 };
                                 return obj;
-                            }
                         }
                         else{
-                            //s_0.push([]);
-                            
-                            continue;
+                            if(i == parser0.length){
+                            //console.log("EEEEEEEEEEEEEEEE")    
+                            const obj: suc_fail = {
+                                status : "failure",
+                                scanned : partial_struct
+                            };
+                            return obj;
+                        }
+                        else{
+                            break;
                         }
                     }
-                    else{
-                        continue;
                     }
-               
-                
+                   
+                        partial_struct.push(parse_struct);
+                        //console.log(parse_struct)
+                        partial_defined.push(parse_defined);
+                        //console.log(partial_struct)
+                        parse_struct = [];
+                        parse_defined = [];
                 }
-               /* else if(typspf == "object"){
-                    for(var k = 0;k<parser0[i][j].length;k++){
-                        var t = typeof(parser0[i][j][k]);
-                        if(t == "function"){
-                        }
-                    }
-                }*/                
             }
-            if(s_0.length == 0){
-                //console.log("s_0")
+            if(partial_struct.length == 0){
                 continue;
             }
             else{
-            bb.push(s_0);
-            break;
+                break;
             }
         }
-       // console.log(s_0)
-        if(bb.length == 0){
-            const obj: suc_fail = {
-                status : "failure",
-                scanned : bb
-                
-            };
-        }
-        else{
-        const obj: suc_fail = {
+        //console.log(partial_struct)
+        return {
             status : "sucess",
-            scanned : bb
-            
-        };
-        return obj;}
-    
-   }
-   return recur_f;
+            scanned : partial_struct,
+            acc:{
+                name:b,
+                val:partial_defined}
+        }
+    }
+    return recur_f;
 }
 
-
-
-/*
- do{
-                    var recur = recur_f(match);
-                    //console.log("recur",recur);
-                    
-                    if(recur.status == "failure"){
-
-                        if(recur.fatal_err=="EOF"){recur
-                            if(j == parser0[i].length-1){
-                                s_0.push([]);
-                                
-                                break;
-                            }
-                            else{
-                                const obj: suc_fail = {
-                                    status : "failure",
-                                    scanned : s_0,
-                                    fatal_err : "EOF"
-                                };
-                                return obj;
-                            }
-                        }
-                        else{
-                            s_0.push([]);
-                            
-                            continue;
-                        }
-                    }
-                    else{
-                        //console.log(recur)
-                        s_0.push(temp.scanned);
-
-                    }}while(recur.status!="failure")
-                        
-                        if(j>0){
-                            const obj: suc_fail = {
-                                status : "failure",
-                                scanned : [],
-                            };
-                            return obj;
-                        }
-                        if(i == parser0.length-1){
-                            const obj: suc_fail = {
-                                status : "failure",
-                                scanned : []
-                            };
-                            return obj;
-                            break;
-                        }
-                        else{
-                            s_0.push([]);
-                            break;    
-                        }
-    var stat1 = structuredClone(anyarr);
+export function PconstructK(parser0,b?:any){
     var recur_f = function(match: inputstr){
-        if(parser0.length != loca.length){
+        if(match.curpo == match.maxlen){
             const obj: suc_fail = {
                 status : "failure",
-                scanned : []
+                scanned : [],
+                fatal_err : "EOF"
             };
             return obj;
         }
-        var soln_st:string[] = [];
+        //var parse_struct =  [];
+       // var parse_defined = [];
         for(var i = 0;i<parser0.length;i++){
-            var soln_set:string[] = [];
-            var stat = 0;
+            if(match.curpo == match.maxlen){
+                break;
+            }
+            var partial_struct = [];
+            var partial_defined = [];
             for(var j = 0;j<parser0[i].length;j++){
-                if(j == 0 && loca[i][j] == 1){
-                    
+                var typspf = typeof(parser0[i][j]);
+                if(typspf == "function"){
+                    if(match.curpo == match.maxlen){
                         const obj: suc_fail = {
                             status : "failure",
-                            scanned : []
+                            scanned : partial_struct,
+                            fatal_err : "EOF"
                         };
                         return obj;
-                
-            }
-                if(loca[i][j] == 1){
-                   var f = recur_f(match);
-                   if(f.status == "sucess"){
-                    soln_set.push(f.scanned);
-                   }
-                   else{
-                    soln_set.push([]);
-                    continue;
-                   }
-                }
-                else{
-                    var f = loca[i][j](match);
-                    if(f.status == "sucess"){
-                        }
-                        if(i == parser0.length-1){
+                    }
+                    var temp = parser0[i][j](match);
+                    if(temp.status == "failure"){
+                        if(j>0){
                             const obj: suc_fail = {
                                 status : "failure",
-                                scanned : []
+                                scanned : partial_struct
                             };
-                        stat = -1;
-                        break;
-                    }                       
+                            return obj;
+                        }
+                        if(i == parser0.length-1){
+                            //console.log("NO")
+                            const obj: suc_fail = {
+                                status : "failure",
+                                scanned : partial_struct
+                            };
+                            return obj;
+                        }
+                        else{
+                            break;    
+                        }
+                    }//
+                    else{
+                        //console.log(temp.scanned)
+                        partial_struct.push(temp.scanned);
+                        partial_defined.push(temp.acc);
+                    }
+                }//endiffunction
+                else if(typspf == "string"){
+                    //console.log(partial_struct)
+                    if(match.curpo == match.maxlen){
+                        const obj: suc_fail = {
+                            status : "failure",
+                            scanned : partial_struct,
+                            fatal_err : "EOF"
+                        };
+                        return obj;
+                    }
+                    var recur;
+                    var parse_struct =  [];
+                    var parse_defined = [];
+                    while(1){
+                        recur = recur_f(match);
+                        if(recur.status == "failure"){
+                            break;
+                        }
+                        else{
+                            //console.log(partial_struct)
+                            parse_struct.push(recur.scanned);
+                            parse_defined.push(recur.acc);
+                        }
+                    }
+                    //partial_struct.push(parse_struct)
+                    //console.log(partial_struct)                   //recur = recur_f(match);
+                    if(recur.status == "failure"){
+                        if(recur.fatal_err=="EOF"){
+                                const obj: suc_fail = {
+                                    status : "failure",
+                                    scanned : partial_struct,
+                                    fatal_err : "EOF"
+                                };
+                                return obj;
+                        }
+                        else{
+                            if(i == parser0.length){
+                            //console.log("EEEEEEEEEEEEEEEE")    
+                            const obj: suc_fail = {
+                                status : "failure",
+                                scanned : partial_struct
+                            };
+                            return obj;
+                        }
+                    }
+                    }
+                   
+                        partial_struct.push(parse_struct);
+                        //console.log(parse_struct)
+                        partial_defined.push(parse_defined);
+                        console.log(partial_struct)
+                        parse_struct = [];
+                        parse_defined = [];
                 }
             }
-            if(stat == -1 && handel == 0){
-                match.
-                soln_st = [...soln_set];
+            if(partial_struct.length == 0){
+                continue;
             }
             else{
-                soln_st = [...soln_set];
-            }
-            
-        }
-}
-
-export function Pchar(chr: string){
-if(chr.length>1){
-    throw new Error("please provide string of length 1");
-}
-return function(match: string){
-    if(match == chr){
-        return 0;
-    }
-    else{
-        return 1;
-    }
-}
-}
-
-export function Pstring(chr: string){
-    return function(match: string){
-        if(match == chr){
-            return 0;
-        }
-        else{
-            return 1;
-        }
-    }
-    }
-export function recur_s(parser0:parser[],pos:number[]){    //pos [a, b ,c] a is presence of recursion status b is position 
-        if(pos.length == 0){
-            console.error("deliberate left recurstions are illegal")
-        }
-
-        var recf = function(){
-            var arr:string[];
-            for(var i =0;i<parser0.length;i++){
-                
+                break;
             }
         }
+        //console.log(partial_struct)
+        return {
+            status : "sucess",
+            scanned : partial_struct,
+            acc:{
+                name:b,
+                val:partial_defined}
+        }
     }
-    */
+    return recur_f;
+}

@@ -73,7 +73,7 @@ export function Pstring(chr: string,b:any){
         var string_tom = (match.src).slice(position)
         //console.log(position);
         //var string_tom = (match.src).slice(position)
-        if((match.src).startsWith(chr,match.curpo) == chr){            //console.log("sucess")
+        if((match.src).startsWith(chr,match.curpo) ){            //console.log("sucess")
             update(match,position+chr.length);
             const obj: suc_fail = {
                 status : "sucess",
